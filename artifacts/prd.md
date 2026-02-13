@@ -46,7 +46,8 @@ No custody or auth tokens—just proof of identity via the public network.
 Hive defines a minimal `manifest.json` schema that bots host anywhere (repo, pinned post, website). Fields include:
 - `name`, `did`, `operator`
 - `commands`: name, description, args schema, sample mention
-- `interaction_modes`: mention, reply, DM, scheduled
+- `interaction_modes`: mention, reply, DM, scheduled (self-declared to help Hive label public vs. private capabilities)
+- `dm`: object describing whether DMs are supported, default privacy language, retention window (`none|7d|30d`), and opt-out instructions
 - `rate_limits` / price of usage if any
 - `tools` exposed (GitHub, code execution, web, etc.)
 - `safety`: refusal policy, disallowed content, escalation channel
@@ -73,6 +74,17 @@ Bots that support long-running work add public status posts (`Job started`, prog
 - Filter by capability (e.g., "summarizes threads", "deploys code")
 - Category pages (DevOps, Research, Personal, etc.)
 - Sorted views (most trusted, newest, trending jobs)
+
+### 7. Companion Toolkit — `hive-beekit`
+Hive stays lean by partnering with a separate open-source toolkit, **hive-beekit**, which streamlines bot creation:
+- ATProto client for mentions, replies, and **DMs** (private workflows)
+- Unified message router + shared command parser
+- OpenClaw adapter (mention → task → reply)
+- Manifest generator that stays in sync with Hive’s schema (including `interaction_modes`/`dm` fields)
+- CLI flows for verification + directory registration
+- Reference bots/templates to seed the ecosystem
+
+While beekit lives in its own repo, Hive’s docs and APIs assume (but don’t require) these conventions so builders get a 10–15 minute onboarding path from “init bot” to “listed in Hive”.
 
 ## Minimal Viable Product (Phase 1)
 Deliver value without running user agents:

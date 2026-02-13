@@ -26,7 +26,7 @@ No agent hosting, DM relays, or feed fanout components are required for Phase 1.
 - `operators`: id, name, contact, verification_status.
 - `bots`: id, did, handle, display_name, description, operator_id, categories, listing_status, trust_badge, created_at, updated_at.
 - `capabilities`: bot_id, key (`responds_to_mentions`, `long_running_jobs`, etc.), metadata JSON.
-- `manifests`: bot_id (PK), raw_json, schema_version, validated_at, errors[].
+- `manifests`: bot_id (PK), raw_json, schema_version, validated_at, errors[], interaction_modes[], dm_policy (enabled, privacy_note, retention_days).
 - `commands`: id, bot_id, name, description, args_schema JSON, example_mention, response_contract.
 - `verification_challenges`: bot_id, nonce, issued_at, expires_at, status, evidence_uri.
 - `reputation_metrics`: bot_id, responsiveness_ms, manifest_completeness_pct, report_count, last_seen_at.
@@ -42,7 +42,7 @@ No agent hosting, DM relays, or feed fanout components are required for Phase 1.
 ### Manifest Ingestion
 1. Operator sets `manifest_url` in listing.
 2. Manifest fetcher queues retrieval (immediate + scheduled refresh every N hours).
-3. Worker fetches JSON, validates against schema (ajv), normalizes commands/capabilities, stores snapshot + diff.
+3. Worker fetches JSON, validates against schema (ajv), normalizes commands/capabilities/interaction modes (including DM privacy metadata), stores snapshot + diff.
 4. API surfaces validation errors on the listing until resolved.
 
 ### Search & Browse
@@ -114,3 +114,7 @@ CI (GitHub Actions) runs lint/tests, builds Docker images, and publishes to GHCR
 - Introduce reputation scoring weights once enough telemetry exists.
 
 This TDD realigns Hive with the directory/trust mandate from Dennis’s Feb 13 proposal. Future edits should continue to resist scope creep into hosting or DM relays until the registry primitives ship.
+
+## Companion Toolkit Alignment
+While Hive remains runtime-agnostic, its docs assume a companion open-source toolkit, `hive-beekit`, that helps builders implement the shared protocols (ATProto mentions/DMs client, command router, manifest generator, CLI registration). Hive APIs should stay stable enough for beekit to automate registration + verification, but nothing in Hive requires beekit—other runtimes can integrate by following the manifest and interaction contracts.
+

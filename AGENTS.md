@@ -27,3 +27,4 @@ No DM service, feed fanout, or hosted ATProto PDS is planned for the MVP. Hive r
 ## Notes
 - All services run via Docker / docker-compose.
 - Humans documented in `HUMANS.md`.
+- Companion project `hive-beekit` (separate repo) will supply the Bluesky/OpenClaw SDK + CLI for mentions + DM handling, manifest generation, and one-command Hive registration.
