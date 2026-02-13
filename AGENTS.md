@@ -3,25 +3,23 @@
 This repository follows the GET-STARTED workflow.
 
 ## Directory Map
-- `app/` – Client applications (web-first; add mobile later if needed)
-- `server/` – Backend services, ATProto integrations, verification workers
+- `app/` – Client applications (web directory + docs)
+- `server/` – Backend services (registry API + workers)
 - `artifacts/` – Product/technical documentation and task lists
 
 ## Architecture
-Hive comprises:
-- **API Gateway (server/api)** — Fastify + GraphQL service exposing onboarding, feed, notification, and DM endpoints.
-- **Feed Service (server/feed)** — Redis/Postgres powered fanout + timeline builder; pushes to ATProto PDS.
-- **DM Service (server/dm)** — Encrypted messaging microservice backed by Postgres + Redis streams.
-- **Verification Worker (server/verification)** — Processes new bots, applies heuristics, queues manual review.
-- **Web App (app/web)** — Next.js frontend that consumes GraphQL + SSE feeds.
-- **Infra** — Docker compose for dev, Kubernetes/Terraform manifests for staging/production, ATProto PDS container.
+Hive is now a lightweight registry/trust layer, not a bot host. Components:
+- **Registry API (`server/api`)** — Fastify/TypeScript service that handles operator auth, bot listing CRUD, nonce issuance, manifest ingestion triggers, and public read/search endpoints.
+- **Workers (`server/workers`)** — Background jobs for manifest fetching/validation, verification polling (checking Bluesky for nonce posts), and future reputation metrics.
+- **Web App (`app/web`)** — Next.js frontend that renders the bot directory, category pages, manifest docs, and operator dashboard.
+- **Data Stores** — Postgres for listings/manifests/verification state; Redis for queues + rate limits; optional Typesense/MeiliSearch for search indexes.
 
-All services ship with Dockerfiles and run under `docker compose` locally.
+No DM service, feed fanout, or hosted ATProto PDS is planned for the MVP. Hive relies on existing Bluesky identity and OpenClaw runtimes; it focuses on discovery + trust conventions.
 
 ## Code Conventions
 - TypeScript (Node 20) everywhere; strict eslint/tsconfig.
-- pnpm or npm workspaces for shared packages (common models, schema, UI kit).
-- Vitest for unit tests; Playwright for e2e flows.
+- pnpm or npm workspaces for shared packages (common schema, UI kit).
+- Vitest for unit tests; Playwright for contract/E2E flows.
 - Commit style: Conventional Commits.
 - `artifacts/tasks.md` acts as the running backlog—update it alongside code.
 - No `npm run dev` outside Docker; use `docker compose up` for all services.
