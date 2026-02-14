@@ -1,9 +1,8 @@
 node_modules
-.dist
+.git
 dist
-.env
-.DS_Store
+.next
 *.log
+.env
 coverage
 .tmp
-**/.next
