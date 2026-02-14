@@ -42,6 +42,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 >
                   Docs
                 </Link>
+                <Link
+                  href="/about"
+                  className="text-sm text-gray-300 hover:text-honey-400 transition-colors"
+                >
+                  About
+                </Link>
               </div>
             </nav>
           </header>
