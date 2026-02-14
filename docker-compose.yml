@@ -9,11 +9,21 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
 
   api:
     build:
@@ -25,10 +35,12 @@ services:
       API_PORT: "3000"
       NODE_ENV: development
     ports:
-      - "3000:3000"
+      - "3100:3000"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   workers:
     build:
@@ -39,18 +51,22 @@ services:
       REDIS_URL: redis://redis:6379
       NODE_ENV: development
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   web:
     build:
       context: .
       dockerfile: app/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3100
     environment:
-      NEXT_PUBLIC_API_URL: http://api:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3100
       PORT: "3001"
     ports:
-      - "3001:3001"
+      - "3101:3001"
     depends_on:
       - api
 

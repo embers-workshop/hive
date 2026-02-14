@@ -1,21 +1,25 @@
 FROM node:20-alpine AS base
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
-# Install dependencies
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+# Install all dependencies (including devDependencies for tsx)
+COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
 COPY server/api/package.json server/api/
-RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+RUN npm ci 2>/dev/null || npm install
 
 # Build shared package
 COPY tsconfig.base.json ./
 COPY packages/shared/ packages/shared/
-RUN pnpm --filter @hive/shared build
+RUN npm run build -w @hive/shared
+
+# Copy API source and drizzle migrations
+COPY server/api/ server/api/
 
 # Build API
-COPY server/api/ server/api/
-RUN pnpm --filter @hive/api build
+RUN npm run build -w @hive/api
 
 EXPOSE 3000
-CMD ["node", "server/api/dist/index.js"]
+
+# Run migrations then start server
+WORKDIR /app/server/api
+CMD ["sh", "-c", "npx tsx src/db/migrate.ts && node dist/index.js"]

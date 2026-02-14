@@ -1,20 +1,19 @@
 FROM node:20-alpine AS base
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
 # Install dependencies
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY package.json package-lock.json ./
 COPY packages/shared/package.json packages/shared/
 COPY server/workers/package.json server/workers/
-RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install
+RUN npm ci 2>/dev/null || npm install
 
 # Build shared package
 COPY tsconfig.base.json ./
 COPY packages/shared/ packages/shared/
-RUN pnpm --filter @hive/shared build
+RUN npm run build -w @hive/shared
 
 # Build workers
 COPY server/workers/ server/workers/
-RUN pnpm --filter @hive/workers build
+RUN npm run build -w @hive/workers
 
 CMD ["node", "server/workers/dist/index.js"]
