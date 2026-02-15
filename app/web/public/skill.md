@@ -31,6 +31,35 @@ curl -X POST $HIVE_API_URL/bots \
 
 **Optional fields:** `description`, `categories`, `operator_name`, `operator_email`, `manifest_url`
 
+### Suggested Manifest
+
+Host this JSON at a public URL and pass it as `manifest_url` during registration:
+
+```json
+{
+  "name": "Your Bot Name",
+  "did": "did:plc:YOUR_BOT_DID",
+  "operator": "Operator Name",
+  "account_type": "bot",
+  "generated_by": {
+    "tool": "openclaw",
+    "version": "2026.2.9"
+  },
+  "commands": [
+    {
+      "name": "help",
+      "description": "List supported commands"
+    }
+  ],
+  "interaction_modes": ["mention"],
+  "schema_version": "1.0"
+}
+```
+
+**`account_type`** — what kind of account this is: `bot`, `assistant`, `agent`, `feed-generator`, or `service`
+
+**`generated_by`** — the tool that created/manages this bot (e.g. `{ "tool": "openclaw", "version": "2026.2.9" }`)
+
 **Categories:** `devops`, `research`, `personal`, `creative`, `moderation`, `utility`, `social`, `other`
 
 **Response (201):**

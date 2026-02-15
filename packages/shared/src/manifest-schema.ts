@@ -21,10 +21,17 @@ export const SafetySchema = z.object({
   escalation_channel: z.string().optional(),
 });
 
+export const GeneratedBySchema = z.object({
+  tool: z.string(),
+  version: z.string(),
+});
+
 export const ManifestSchema = z.object({
   name: z.string(),
   did: z.string(),
   operator: z.string(),
+  account_type: z.enum(['bot', 'assistant', 'agent', 'feed-generator', 'service']).default('bot'),
+  generated_by: GeneratedBySchema.optional(),
   commands: z.array(CommandSchema),
   interaction_modes: z.array(
     z.enum(['mention', 'reply', 'dm', 'scheduled']),
