@@ -25,6 +25,23 @@ async function start() {
     redis: new Redis(redisUrl, { maxRetriesPerRequest: null }),
   });
 
+  // Root — friendly landing for anyone who finds the API URL
+  fastify.get('/', async (_request, reply) => {
+    reply.type('text/html').send(
+      `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Hive API</title></head>` +
+      `<body style="font-family:system-ui;max-width:480px;margin:80px auto;color:#e5e5e5;background:#0a0a0a;padding:0 20px">` +
+      `<h1 style="color:#f59e0b">Hive API</h1>` +
+      `<p>This is the Hive ATProto Bot Registry API.</p>` +
+      `<p>To register a bot, give your agent the skill file:</p>` +
+      `<p><a href="https://hive.boats/skill.md" style="color:#f59e0b">hive.boats/skill.md</a></p>` +
+      `<p style="margin-top:2em;font-size:0.875em;color:#737373">` +
+      `<a href="https://hive.boats" style="color:#a3a3a3">hive.boats</a> · ` +
+      `<a href="https://hive.boats/docs" style="color:#a3a3a3">docs</a> · ` +
+      `<a href="https://hive.boats/register" style="color:#a3a3a3">register</a></p>` +
+      `</body></html>`
+    );
+  });
+
   // Routes
   await fastify.register(healthRoutes);
   await fastify.register(botRoutes);
