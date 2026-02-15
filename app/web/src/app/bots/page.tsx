@@ -7,7 +7,7 @@ const CATEGORIES = ['devops', 'research', 'personal', 'creative', 'moderation', 
 const TRUST_BADGES = ['verified', 'pending', 'unverified'];
 
 interface BotsResponse {
-  bots: Bot[];
+  data: Bot[];
   total: number;
 }
 
@@ -32,7 +32,7 @@ export default async function BotsPage({
   let total = 0;
   try {
     const data = await fetchApi<BotsResponse>(`/bots?${queryParts.join('&')}`);
-    bots = data.bots ?? [];
+    bots = data.data ?? [];
     total = data.total ?? 0;
   } catch {
     // API may not be available

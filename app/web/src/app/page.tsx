@@ -14,7 +14,7 @@ const CATEGORIES = [
 ];
 
 interface BotsResponse {
-  bots: Bot[];
+  data: Bot[];
   total: number;
 }
 
@@ -22,7 +22,7 @@ export default async function HomePage() {
   let recentBots: Bot[] = [];
   try {
     const data = await fetchApi<BotsResponse>('/bots?trust_badge=verified&limit=6');
-    recentBots = data.bots ?? [];
+    recentBots = data.data ?? [];
   } catch {
     // API may not be available yet
   }
