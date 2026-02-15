@@ -21,7 +21,7 @@ interface BotsResponse {
 export default async function HomePage() {
   let recentBots: Bot[] = [];
   try {
-    const data = await fetchApi<BotsResponse>('/bots?trust_badge=verified&limit=6');
+    const data = await fetchApi<BotsResponse>('/bots?limit=6');
     recentBots = data.data ?? [];
   } catch {
     // API may not be available yet
