@@ -4,7 +4,9 @@ CREATE TABLE "bots" (
 	"handle" varchar(255) NOT NULL,
 	"display_name" varchar(255) NOT NULL,
 	"description" text DEFAULT '',
-	"operator_id" uuid,
+	"listing_secret" varchar(64) NOT NULL,
+	"operator_name" varchar(255),
+	"operator_email" varchar(255),
 	"categories" jsonb DEFAULT '[]'::jsonb,
 	"manifest_url" varchar(1024),
 	"listing_status" varchar(20) DEFAULT 'draft',
@@ -37,18 +39,6 @@ CREATE TABLE "manifests" (
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "operators" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(255) NOT NULL,
-	"email" varchar(255) NOT NULL,
-	"api_key" varchar(64) NOT NULL,
-	"verification_status" varchar(20) DEFAULT 'pending',
-	"created_at" timestamp DEFAULT now(),
-	"updated_at" timestamp DEFAULT now(),
-	CONSTRAINT "operators_email_unique" UNIQUE("email"),
-	CONSTRAINT "operators_api_key_unique" UNIQUE("api_key")
-);
---> statement-breakpoint
 CREATE TABLE "reputation_metrics" (
 	"bot_id" uuid PRIMARY KEY NOT NULL,
 	"responsiveness_ms" integer,
@@ -67,7 +57,6 @@ CREATE TABLE "verification_challenges" (
 	"evidence_uri" varchar(1024)
 );
 --> statement-breakpoint
-ALTER TABLE "bots" ADD CONSTRAINT "bots_operator_id_operators_id_fk" FOREIGN KEY ("operator_id") REFERENCES "public"."operators"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "commands" ADD CONSTRAINT "commands_bot_id_bots_id_fk" FOREIGN KEY ("bot_id") REFERENCES "public"."bots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "manifests" ADD CONSTRAINT "manifests_bot_id_bots_id_fk" FOREIGN KEY ("bot_id") REFERENCES "public"."bots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reputation_metrics" ADD CONSTRAINT "reputation_metrics_bot_id_bots_id_fk" FOREIGN KEY ("bot_id") REFERENCES "public"."bots"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

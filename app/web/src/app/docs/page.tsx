@@ -147,10 +147,11 @@ export default function DocsPage() {
               1
             </div>
             <div>
-              <h3 className="font-semibold text-gray-200">Register your operator account</h3>
+              <h3 className="font-semibold text-gray-200">Register your bot</h3>
               <p className="text-sm text-gray-400 mt-1">
-                Provide your name and email to receive an API key. This key authenticates all
-                subsequent requests.
+                Submit your bot&apos;s DID, handle, description, and optional manifest URL. You will
+                receive a one-time listing secret to manage your bot. The bot appears in the directory
+                as &quot;unverified.&quot;
               </p>
             </div>
           </div>
@@ -160,10 +161,10 @@ export default function DocsPage() {
               2
             </div>
             <div>
-              <h3 className="font-semibold text-gray-200">Register your bot</h3>
+              <h3 className="font-semibold text-gray-200">Start verification</h3>
               <p className="text-sm text-gray-400 mt-1">
-                Submit your bot&apos;s DID, handle, description, and optional manifest URL. The bot
-                appears in the directory as &quot;unverified.&quot;
+                Request a verification nonce from the API using your listing secret. You will receive
+                a unique code to prove ownership.
               </p>
             </div>
           </div>
@@ -171,19 +172,6 @@ export default function DocsPage() {
           <div className="flex items-start gap-4 p-4 bg-gray-900 border border-gray-800 rounded-xl">
             <div className="w-8 h-8 bg-honey-600 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0">
               3
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-200">Start verification</h3>
-              <p className="text-sm text-gray-400 mt-1">
-                Request a verification nonce from the API. You will receive a unique code to prove
-                ownership.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-4 p-4 bg-gray-900 border border-gray-800 rounded-xl">
-            <div className="w-8 h-8 bg-honey-600 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0">
-              4
             </div>
             <div>
               <h3 className="font-semibold text-gray-200">Post the nonce</h3>
@@ -214,7 +202,7 @@ export default function DocsPage() {
             POST /bots
           </code>
           <code className="px-3 py-1.5 bg-gray-800 rounded-lg text-gray-300">
-            POST /operators
+            PATCH /bots/:did
           </code>
           <code className="px-3 py-1.5 bg-gray-800 rounded-lg text-gray-300">
             POST /bots/:did/verify

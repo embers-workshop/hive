@@ -1,9 +1,15 @@
 import { FastifyInstance } from 'fastify';
+import crypto from 'node:crypto';
 import { eq, ilike, and, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { bots, operators, reputationMetrics, manifests, commands } from '../db/schema.js';
-import { authenticateOperator } from '../lib/auth.js';
+import { bots, reputationMetrics, manifests, commands } from '../db/schema.js';
+import { authenticateBot } from '../lib/auth.js';
 import { manifestFetchQueue } from '../lib/queue.js';
+
+function sanitizeBot(bot: typeof bots.$inferSelect) {
+  const { listingSecret, ...safe } = bot;
+  return safe;
+}
 
 export default async function (fastify: FastifyInstance) {
   // GET /bots — Public listing
@@ -53,11 +59,9 @@ export default async function (fastify: FastifyInstance) {
       db
         .select({
           bot: bots,
-          operator_name: operators.name,
           reputation: reputationMetrics,
         })
         .from(bots)
-        .leftJoin(operators, eq(bots.operatorId, operators.id))
         .leftJoin(reputationMetrics, eq(bots.id, reputationMetrics.botId))
         .where(whereClause)
         .limit(limit)
@@ -71,8 +75,8 @@ export default async function (fastify: FastifyInstance) {
     return {
       success: true,
       data: results.map((r) => ({
-        ...r.bot,
-        operator_name: r.operator_name,
+        ...sanitizeBot(r.bot),
+        operator_name: r.bot.operatorName,
         reputation: r.reputation,
       })),
       total: countResult[0].count,
@@ -90,12 +94,10 @@ export default async function (fastify: FastifyInstance) {
     const botRows = await db
       .select({
         bot: bots,
-        operator: operators,
         reputation: reputationMetrics,
         manifest: manifests,
       })
       .from(bots)
-      .leftJoin(operators, eq(bots.operatorId, operators.id))
       .leftJoin(reputationMetrics, eq(bots.id, reputationMetrics.botId))
       .leftJoin(manifests, eq(bots.id, manifests.botId))
       .where(eq(bots.did, did))
@@ -116,8 +118,9 @@ export default async function (fastify: FastifyInstance) {
     return {
       success: true,
       data: {
-        ...row.bot,
-        operator: row.operator,
+        ...sanitizeBot(row.bot),
+        operator_name: row.bot.operatorName,
+        operator_email: row.bot.operatorEmail,
         manifest: row.manifest,
         commands: botCommands,
         reputation: row.reputation,
@@ -125,7 +128,7 @@ export default async function (fastify: FastifyInstance) {
     };
   });
 
-  // POST /bots — Create bot listing
+  // POST /bots — Create bot listing (open, no auth)
   fastify.post<{
     Body: {
       did: string;
@@ -134,21 +137,13 @@ export default async function (fastify: FastifyInstance) {
       description?: string;
       categories?: string[];
       manifest_url?: string;
+      operator_name?: string;
+      operator_email?: string;
     };
   }>('/bots', async (request, reply) => {
-    const apiKey = request.headers['x-api-key'] as string;
-    if (!apiKey) {
-      reply.code(401);
-      return { success: false, error: 'Missing x-api-key header' };
-    }
+    const { did, handle, display_name, description, categories, manifest_url, operator_name, operator_email } = request.body;
 
-    const operator = await authenticateOperator(apiKey, db);
-    if (!operator) {
-      reply.code(401);
-      return { success: false, error: 'Invalid API key' };
-    }
-
-    const { did, handle, display_name, description, categories, manifest_url } = request.body;
+    const listingSecret = crypto.randomBytes(32).toString('hex');
 
     const [bot] = await db
       .insert(bots)
@@ -157,7 +152,9 @@ export default async function (fastify: FastifyInstance) {
         handle,
         displayName: display_name,
         description: description ?? '',
-        operatorId: operator.id,
+        listingSecret,
+        operatorName: operator_name ?? null,
+        operatorEmail: operator_email ?? null,
         categories: categories ?? [],
         manifestUrl: manifest_url ?? null,
       })
@@ -172,7 +169,13 @@ export default async function (fastify: FastifyInstance) {
     }
 
     reply.code(201);
-    return { success: true, data: bot };
+    return {
+      success: true,
+      data: {
+        ...sanitizeBot(bot),
+        listing_secret: listingSecret,
+      },
+    };
   });
 
   // PATCH /bots/:did — Update listing
@@ -185,39 +188,25 @@ export default async function (fastify: FastifyInstance) {
       categories?: string[];
       manifest_url?: string;
       listing_status?: string;
+      operator_name?: string;
+      operator_email?: string;
     };
   }>('/bots/:did', async (request, reply) => {
-    const apiKey = request.headers['x-api-key'] as string;
-    if (!apiKey) {
+    const listingSecret = request.headers['x-listing-secret'] as string;
+    if (!listingSecret) {
       reply.code(401);
-      return { success: false, error: 'Missing x-api-key header' };
-    }
-
-    const operator = await authenticateOperator(apiKey, db);
-    if (!operator) {
-      reply.code(401);
-      return { success: false, error: 'Invalid API key' };
+      return { success: false, error: 'Missing x-listing-secret header' };
     }
 
     const { did } = request.params;
 
-    const existing = await db
-      .select()
-      .from(bots)
-      .where(eq(bots.did, did))
-      .limit(1);
-
-    if (existing.length === 0) {
-      reply.code(404);
-      return { success: false, error: 'Bot not found' };
+    const bot = await authenticateBot(did, listingSecret, db);
+    if (!bot) {
+      reply.code(401);
+      return { success: false, error: 'Invalid listing secret' };
     }
 
-    if (existing[0].operatorId !== operator.id) {
-      reply.code(403);
-      return { success: false, error: 'Not authorized to update this bot' };
-    }
-
-    const { handle, display_name, description, categories, manifest_url, listing_status } =
+    const { handle, display_name, description, categories, manifest_url, listing_status, operator_name, operator_email } =
       request.body;
 
     const updates: Record<string, unknown> = {};
@@ -227,6 +216,8 @@ export default async function (fastify: FastifyInstance) {
     if (categories !== undefined) updates.categories = categories;
     if (manifest_url !== undefined) updates.manifestUrl = manifest_url;
     if (listing_status !== undefined) updates.listingStatus = listing_status;
+    if (operator_name !== undefined) updates.operatorName = operator_name;
+    if (operator_email !== undefined) updates.operatorEmail = operator_email;
     updates.updatedAt = new Date();
 
     const [updated] = await db
@@ -235,6 +226,6 @@ export default async function (fastify: FastifyInstance) {
       .where(eq(bots.did, did))
       .returning();
 
-    return { success: true, data: updated };
+    return { success: true, data: sanitizeBot(updated) };
   });
 }

@@ -10,18 +10,6 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
-// ── Operators ────────────────────────────────────────────────────────────────
-
-export const operators = pgTable('operators', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  apiKey: varchar('api_key', { length: 64 }).notNull().unique(),
-  verificationStatus: varchar('verification_status', { length: 20 }).default('pending'),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow(),
-});
-
 // ── Bots ─────────────────────────────────────────────────────────────────────
 
 export const bots = pgTable('bots', {
@@ -30,7 +18,9 @@ export const bots = pgTable('bots', {
   handle: varchar('handle', { length: 255 }).notNull(),
   displayName: varchar('display_name', { length: 255 }).notNull(),
   description: text('description').default(''),
-  operatorId: uuid('operator_id').references(() => operators.id),
+  listingSecret: varchar('listing_secret', { length: 64 }).notNull(),
+  operatorName: varchar('operator_name', { length: 255 }),
+  operatorEmail: varchar('operator_email', { length: 255 }),
   categories: jsonb('categories').default([]),
   manifestUrl: varchar('manifest_url', { length: 1024 }),
   listingStatus: varchar('listing_status', { length: 20 }).default('draft'),

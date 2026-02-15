@@ -1,21 +1,13 @@
 import type { Manifest, Command } from './manifest-schema.js';
 
-export interface Operator {
-  id: string;
-  name: string;
-  email: string;
-  verification_status: string;
-  created_at: Date;
-  updated_at: Date;
-}
-
 export interface Bot {
   id: string;
   did: string;
   handle: string;
   display_name: string;
   description: string;
-  operator_id: string;
+  operator_name: string | null;
+  operator_email: string | null;
   categories: string[];
   manifest_url: string | null;
   listing_status: string;
@@ -33,7 +25,6 @@ export interface ReputationMetrics {
 }
 
 export interface BotWithDetails extends Bot {
-  operator?: Operator;
   manifest?: Manifest | null;
   commands?: Command[];
   reputation?: ReputationMetrics | null;

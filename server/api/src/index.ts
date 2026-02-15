@@ -4,7 +4,6 @@ import rateLimit from '@fastify/rate-limit';
 import { Redis } from 'ioredis';
 
 import healthRoutes from './routes/health.js';
-import operatorRoutes from './routes/operators.js';
 import botRoutes from './routes/bots.js';
 import verificationRoutes from './routes/verification.js';
 import manifestRoutes from './routes/manifest.js';
@@ -27,7 +26,6 @@ async function start() {
 
   // Routes
   await fastify.register(healthRoutes);
-  await fastify.register(operatorRoutes);
   await fastify.register(botRoutes);
   await fastify.register(verificationRoutes);
   await fastify.register(manifestRoutes);

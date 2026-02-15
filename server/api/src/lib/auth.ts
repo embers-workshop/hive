@@ -1,13 +1,16 @@
 import { eq } from 'drizzle-orm';
-import { operators } from '../db/schema.js';
+import { bots } from '../db/schema.js';
 import type { Database } from '../db/index.js';
 
-export async function authenticateOperator(apiKey: string, db: Database) {
+export async function authenticateBot(did: string, listingSecret: string, db: Database) {
   const results = await db
     .select()
-    .from(operators)
-    .where(eq(operators.apiKey, apiKey))
+    .from(bots)
+    .where(eq(bots.did, did))
     .limit(1);
 
-  return results[0] ?? null;
+  const bot = results[0];
+  if (!bot || bot.listingSecret !== listingSecret) return null;
+
+  return bot;
 }

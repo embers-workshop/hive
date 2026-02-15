@@ -11,20 +11,18 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Step 1: Operator
-  const [operatorName, setOperatorName] = useState('');
-  const [operatorEmail, setOperatorEmail] = useState('');
-  const [apiKey, setApiKey] = useState('');
-
-  // Step 2: Bot
+  // Step 1: Bot + optional operator info
   const [botDid, setBotDid] = useState('');
   const [botHandle, setBotHandle] = useState('');
   const [botDisplayName, setBotDisplayName] = useState('');
   const [botDescription, setBotDescription] = useState('');
   const [botCategories, setBotCategories] = useState<string[]>([]);
   const [manifestUrl, setManifestUrl] = useState('');
+  const [operatorName, setOperatorName] = useState('');
+  const [operatorEmail, setOperatorEmail] = useState('');
+  const [listingSecret, setListingSecret] = useState('');
 
-  // Step 3: Verification
+  // Step 2: Verification
   const [nonce, setNonce] = useState('');
   const [verifyInstructions, setVerifyInstructions] = useState('');
 
@@ -34,30 +32,6 @@ export default function RegisterPage() {
     );
   }
 
-  async function registerOperator(e: React.FormEvent) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/operators`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: operatorName, email: operatorEmail }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(data.error || 'Failed to register operator');
-      }
-      const data = await res.json();
-      setApiKey(data.api_key || data.apiKey || '');
-      setStep(2);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function registerBot(e: React.FormEvent) {
     e.preventDefault();
     setError('');
@@ -65,10 +39,7 @@ export default function RegisterPage() {
     try {
       const res = await fetch(`${API_URL}/bots`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           did: botDid,
           handle: botHandle,
@@ -76,13 +47,17 @@ export default function RegisterPage() {
           description: botDescription,
           categories: botCategories,
           manifest_url: manifestUrl || undefined,
+          operator_name: operatorName || undefined,
+          operator_email: operatorEmail || undefined,
         }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({ error: res.statusText }));
         throw new Error(data.error || 'Failed to register bot');
       }
-      setStep(3);
+      const data = await res.json();
+      setListingSecret(data.data?.listing_secret || '');
+      setStep(2);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
     } finally {
@@ -98,7 +73,7 @@ export default function RegisterPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey,
+          'x-listing-secret': listingSecret,
         },
       });
       if (!res.ok) {
@@ -106,10 +81,10 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Failed to start verification');
       }
       const data = await res.json();
-      setNonce(data.nonce || '');
+      setNonce(data.data?.nonce || '');
       setVerifyInstructions(
-        data.instructions ||
-          `Post the following nonce in your bot's profile or a public post to verify ownership: ${data.nonce}`
+        data.data?.instructions ||
+          `Post the following nonce in your bot's profile or a public post to verify ownership: ${data.data?.nonce}`
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong');
@@ -122,12 +97,12 @@ export default function RegisterPage() {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <h1 className="text-3xl font-bold mb-2">Register a Bot</h1>
       <p className="text-gray-400 mb-8">
-        Register your ATProto bot with Hive in three steps.
+        Register your ATProto bot with Hive in two steps.
       </p>
 
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-8">
-        {[1, 2, 3].map((s) => (
+        {[1, 2].map((s) => (
           <div key={s} className="flex items-center gap-2">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -138,7 +113,7 @@ export default function RegisterPage() {
             >
               {s}
             </div>
-            {s < 3 && (
+            {s < 2 && (
               <div
                 className={`w-12 h-0.5 ${
                   step > s ? 'bg-honey-600' : 'bg-gray-800'
@@ -148,9 +123,8 @@ export default function RegisterPage() {
           </div>
         ))}
         <div className="ml-4 text-sm text-gray-500">
-          {step === 1 && 'Register Operator'}
-          {step === 2 && 'Register Bot'}
-          {step === 3 && 'Verify Ownership'}
+          {step === 1 && 'Register Bot'}
+          {step === 2 && 'Verify Ownership'}
         </div>
       </div>
 
@@ -160,156 +134,132 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* Step 1: Operator */}
+      {/* Step 1: Bot Registration */}
       {step === 1 && (
-        <form onSubmit={registerOperator} className="space-y-4">
+        <form onSubmit={registerBot} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">DID</label>
+            <input
+              type="text"
+              required
+              value={botDid}
+              onChange={(e) => setBotDid(e.target.value)}
+              placeholder="did:plc:..."
+              className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500 font-mono text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Handle</label>
+            <input
+              type="text"
+              required
+              value={botHandle}
+              onChange={(e) => setBotHandle(e.target.value)}
+              placeholder="mybot.bsky.social"
+              className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Operator Name
+              Display Name
             </label>
             <input
               type="text"
               required
-              value={operatorName}
-              onChange={(e) => setOperatorName(e.target.value)}
-              placeholder="Your name or organization"
+              value={botDisplayName}
+              onChange={(e) => setBotDisplayName(e.target.value)}
+              placeholder="My Awesome Bot"
               className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Email
+              Description
             </label>
-            <input
-              type="email"
-              required
-              value={operatorEmail}
-              onChange={(e) => setOperatorEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500"
+            <textarea
+              value={botDescription}
+              onChange={(e) => setBotDescription(e.target.value)}
+              placeholder="What does your bot do?"
+              rows={3}
+              className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500 resize-none"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Categories
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => toggleCategory(cat)}
+                  className={`px-3 py-1.5 text-sm rounded-lg capitalize transition-colors ${
+                    botCategories.includes(cat)
+                      ? 'bg-honey-600 text-white'
+                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Manifest URL <span className="text-gray-500">(optional)</span>
+            </label>
+            <input
+              type="url"
+              value={manifestUrl}
+              onChange={(e) => setManifestUrl(e.target.value)}
+              placeholder="https://example.com/.well-known/bot-manifest.json"
+              className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500 text-sm"
+            />
+          </div>
+
+          <div className="border-t border-gray-800 pt-4 mt-4">
+            <p className="text-sm text-gray-500 mb-3">Operator info (optional)</p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Operator Name
+                </label>
+                <input
+                  type="text"
+                  value={operatorName}
+                  onChange={(e) => setOperatorName(e.target.value)}
+                  placeholder="Your name or organization"
+                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Operator Email
+                </label>
+                <input
+                  type="email"
+                  value={operatorEmail}
+                  onChange={(e) => setOperatorEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500"
+                />
+              </div>
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={loading}
             className="w-full py-2.5 bg-honey-600 hover:bg-honey-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
           >
-            {loading ? 'Registering...' : 'Register Operator'}
+            {loading ? 'Registering...' : 'Register Bot'}
           </button>
         </form>
       )}
 
-      {/* Step 2: Bot */}
+      {/* Step 2: Verification */}
       {step === 2 && (
-        <div>
-          {apiKey && (
-            <div className="mb-6 p-4 bg-green-950/30 border border-green-900/50 rounded-xl">
-              <p className="text-sm font-medium text-green-400 mb-1">
-                Operator registered! Save your API key:
-              </p>
-              <code className="block p-2 bg-gray-950 rounded text-xs text-honey-400 font-mono break-all">
-                {apiKey}
-              </code>
-              <p className="text-xs text-gray-500 mt-2">
-                You will need this key to manage your bots. Store it securely.
-              </p>
-            </div>
-          )}
-
-          <form onSubmit={registerBot} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">DID</label>
-              <input
-                type="text"
-                required
-                value={botDid}
-                onChange={(e) => setBotDid(e.target.value)}
-                placeholder="did:plc:..."
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500 font-mono text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">Handle</label>
-              <input
-                type="text"
-                required
-                value={botHandle}
-                onChange={(e) => setBotHandle(e.target.value)}
-                placeholder="mybot.bsky.social"
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Display Name
-              </label>
-              <input
-                type="text"
-                required
-                value={botDisplayName}
-                onChange={(e) => setBotDisplayName(e.target.value)}
-                placeholder="My Awesome Bot"
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Description
-              </label>
-              <textarea
-                value={botDescription}
-                onChange={(e) => setBotDescription(e.target.value)}
-                placeholder="What does your bot do?"
-                rows={3}
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500 resize-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Categories
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => toggleCategory(cat)}
-                    className={`px-3 py-1.5 text-sm rounded-lg capitalize transition-colors ${
-                      botCategories.includes(cat)
-                        ? 'bg-honey-600 text-white'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Manifest URL <span className="text-gray-500">(optional)</span>
-              </label>
-              <input
-                type="url"
-                value={manifestUrl}
-                onChange={(e) => setManifestUrl(e.target.value)}
-                placeholder="https://example.com/.well-known/bot-manifest.json"
-                className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-gray-100 placeholder-gray-500 focus:outline-none focus:border-honey-500 focus:ring-1 focus:ring-honey-500 text-sm"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 bg-honey-600 hover:bg-honey-500 disabled:opacity-50 text-white font-medium rounded-lg transition-colors"
-            >
-              {loading ? 'Registering...' : 'Register Bot'}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {/* Step 3: Verification */}
-      {step === 3 && (
         <div className="space-y-6">
           <div className="p-4 bg-green-950/30 border border-green-900/50 rounded-xl">
             <p className="text-sm font-medium text-green-400">
@@ -319,6 +269,20 @@ export default function RegisterPage() {
               Now verify ownership to earn the verified badge.
             </p>
           </div>
+
+          {listingSecret && (
+            <div className="p-4 bg-amber-950/30 border border-amber-900/50 rounded-xl">
+              <p className="text-sm font-medium text-amber-400 mb-1">
+                Save your listing secret:
+              </p>
+              <code className="block p-2 bg-gray-950 rounded text-xs text-honey-400 font-mono break-all">
+                {listingSecret}
+              </code>
+              <p className="text-xs text-gray-500 mt-2">
+                This is the only time this secret will be shown. You need it to manage your bot listing.
+              </p>
+            </div>
+          )}
 
           {!nonce ? (
             <button

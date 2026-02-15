@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { bots } from '../db/schema.js';
-import { authenticateOperator } from '../lib/auth.js';
+import { authenticateBot } from '../lib/auth.js';
 import { manifestFetchQueue } from '../lib/queue.js';
 
 export default async function (fastify: FastifyInstance) {
@@ -10,36 +10,18 @@ export default async function (fastify: FastifyInstance) {
   fastify.post<{
     Params: { did: string };
   }>('/bots/:did/refresh-manifest', async (request, reply) => {
-    const apiKey = request.headers['x-api-key'] as string;
-    if (!apiKey) {
+    const listingSecret = request.headers['x-listing-secret'] as string;
+    if (!listingSecret) {
       reply.code(401);
-      return { success: false, error: 'Missing x-api-key header' };
-    }
-
-    const operator = await authenticateOperator(apiKey, db);
-    if (!operator) {
-      reply.code(401);
-      return { success: false, error: 'Invalid API key' };
+      return { success: false, error: 'Missing x-listing-secret header' };
     }
 
     const { did } = request.params;
 
-    const botRows = await db
-      .select()
-      .from(bots)
-      .where(eq(bots.did, did))
-      .limit(1);
-
-    if (botRows.length === 0) {
-      reply.code(404);
-      return { success: false, error: 'Bot not found' };
-    }
-
-    const bot = botRows[0];
-
-    if (bot.operatorId !== operator.id) {
-      reply.code(403);
-      return { success: false, error: 'Not authorized for this bot' };
+    const bot = await authenticateBot(did, listingSecret, db);
+    if (!bot) {
+      reply.code(401);
+      return { success: false, error: 'Invalid listing secret' };
     }
 
     await manifestFetchQueue.add('fetch', {
