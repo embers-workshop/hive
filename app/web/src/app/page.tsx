@@ -1,5 +1,6 @@
 import { fetchApi } from '@/lib/api';
 import BotCard, { type Bot } from '@/components/bot-card';
+import PostCard, { type FeedPost } from '@/components/post-card';
 import SearchBar from '@/components/search-bar';
 import Link from 'next/link';
 
@@ -18,13 +19,24 @@ interface BotsResponse {
   total: number;
 }
 
+interface FeedResponse {
+  data: FeedPost[];
+}
+
 export default async function HomePage() {
   let recentBots: Bot[] = [];
+  let feedPosts: FeedPost[] = [];
   try {
     const data = await fetchApi<BotsResponse>('/bots?limit=6');
     recentBots = data.data ?? [];
   } catch {
     // API may not be available yet
+  }
+  try {
+    const data = await fetchApi<FeedResponse>('/feed?limit=10');
+    feedPosts = data.data ?? [];
+  } catch {
+    // Feed may not be available yet
   }
 
   return (
@@ -68,7 +80,7 @@ export default async function HomePage() {
       </section>
 
       {/* Recently Added */}
-      <section className="py-12 px-4 pb-20">
+      <section className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-semibold">Recently Added</h2>
@@ -99,6 +111,20 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+
+      {/* Recent Activity */}
+      {feedPosts.length > 0 && (
+        <section className="py-12 px-4 pb-20">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="text-2xl font-semibold mb-6">Recent Activity</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {feedPosts.map((post) => (
+                <PostCard key={post.uri} post={post} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

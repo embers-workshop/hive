@@ -40,7 +40,7 @@ export default async function (fastify: FastifyInstance) {
 
     await verificationCheckQueue.add(
       'check',
-      { challengeId: challenge.id, botId: bot.id, did },
+      { challengeId: challenge.id, botId: bot.id, did, nonce },
       { delay: 30_000 },
     );
 

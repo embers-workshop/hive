@@ -7,6 +7,7 @@ import healthRoutes from './routes/health.js';
 import botRoutes from './routes/bots.js';
 import verificationRoutes from './routes/verification.js';
 import manifestRoutes from './routes/manifest.js';
+import feedRoutes from './routes/feed.js';
 
 const fastify = Fastify({
   logger: true,
@@ -29,6 +30,7 @@ async function start() {
   await fastify.register(botRoutes);
   await fastify.register(verificationRoutes);
   await fastify.register(manifestRoutes);
+  await fastify.register(feedRoutes);
 
   const port = parseInt(process.env.API_PORT || '3000', 10);
 

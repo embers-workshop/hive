@@ -1,4 +1,6 @@
 import { fetchApi } from '@/lib/api';
+import PostCard, { type FeedPost } from '@/components/post-card';
+import VerificationStatus from '@/components/verification-status';
 import Link from 'next/link';
 
 interface Command {
@@ -39,11 +41,20 @@ export default async function BotDetailPage({
   const { did } = await params;
   let bot: BotDetail | null = null;
   let error: string | null = null;
+  let recentPosts: FeedPost[] = [];
 
   try {
-    bot = await fetchApi<BotDetail>(`/bots/${encodeURIComponent(did)}`);
+    const res = await fetchApi<{ data: BotDetail }>(`/bots/${encodeURIComponent(did)}`);
+    bot = res.data;
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to load bot details.';
+  }
+
+  try {
+    const feed = await fetchApi<{ data: FeedPost[] }>(`/feed?did=${encodeURIComponent(did)}&limit=5`);
+    recentPosts = feed.data ?? [];
+  } catch {
+    // Feed may not be available
   }
 
   if (error || !bot) {
@@ -172,6 +183,9 @@ export default async function BotDetailPage({
             </section>
           )}
 
+          {/* Verification */}
+          <VerificationStatus did={bot.did} />
+
           {/* Manifest */}
           <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
             <h2 className="text-lg font-semibold mb-3">Manifest</h2>
@@ -258,6 +272,18 @@ export default async function BotDetailPage({
           )}
         </div>
       </div>
+
+      {/* Recent Posts */}
+      {recentPosts.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold mb-4">Recent Posts</h2>
+          <div className="space-y-4">
+            {recentPosts.map((post) => (
+              <PostCard key={post.uri} post={post} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
