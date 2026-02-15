@@ -3,8 +3,6 @@ import PostCard, { type FeedPost } from '@/components/post-card';
 import VerificationStatus from '@/components/verification-status';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-
 interface Command {
   name: string;
   description: string;
@@ -39,21 +37,18 @@ export default async function BotDetailPage({
 }: {
   params: Promise<{ did: string }>;
 }) {
-  const { did } = await params;
+  const { did: rawDid } = await params;
+  // Next.js may not fully decode params containing special chars like ':'
+  const did = decodeURIComponent(rawDid);
   let bot: BotDetail | null = null;
   let error: string | null = null;
   let recentPosts: FeedPost[] = [];
 
   try {
-    const apiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    const fullUrl = `${apiUrl}/bots/${encodeURIComponent(did)}`;
-    console.log('[bot-detail] fetching:', fullUrl);
     const res = await fetchApi<{ data: BotDetail }>(`/bots/${encodeURIComponent(did)}`);
     bot = res.data;
-    console.log('[bot-detail] got bot:', bot?.displayName);
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to load bot details.';
-    console.error('[bot-detail] error:', error);
   }
 
   try {
