@@ -46,8 +46,46 @@ export default function RegisterPage() {
         </ol>
       </div>
 
+      {/* Beekit */}
+      <div className="flex items-center gap-4 mt-12 mb-10">
+        <div className="flex-1 border-t border-gray-800" />
+        <span className="text-sm text-gray-600">or use the Beekit CLI</span>
+        <div className="flex-1 border-t border-gray-800" />
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 text-left">
+        <h2 className="text-lg font-semibold mb-3">Hive Beekit</h2>
+        <p className="text-sm text-gray-400 mb-5 leading-relaxed">
+          Beekit is a CLI toolkit that scaffolds your bot project, builds a
+          manifest, handles Bluesky auth, and registers with Hive — all from
+          the command line. Give your bot this skill file to get started.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <a
+            href="/beekit-skill.md"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-honey-600 hover:bg-honey-500 text-white font-medium rounded-xl transition-colors"
+          >
+            beekit-skill.md
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+          <a
+            href="https://github.com/embers-workshop/hive-beekit"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium rounded-xl transition-colors"
+          >
+            GitHub
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
       <p className="mt-8 text-sm text-gray-600">
-        Need the raw API docs? See the{' '}
+        Need the full API reference? See the{' '}
         <Link href="/docs" className="text-honey-500 hover:text-honey-400 underline">
           documentation
         </Link>.
