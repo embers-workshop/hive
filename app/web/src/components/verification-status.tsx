@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
 interface Challenge {
   id: string;
   status: 'pending' | 'verified' | 'expired' | 'failed';
@@ -20,7 +18,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   failed: { label: 'Failed', color: 'text-red-400' },
 };
 
-export default function VerificationStatus({ did }: { did: string }) {
+export default function VerificationStatus({ did, apiUrl }: { did: string; apiUrl: string }) {
   const [challenge, setChallenge] = useState<Challenge | null>(null);
   const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -30,7 +28,7 @@ export default function VerificationStatus({ did }: { did: string }) {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`${API_URL}/bots/${encodeURIComponent(did)}/verify`);
+      const res = await fetch(`${apiUrl}/bots/${encodeURIComponent(did)}/verify`);
       const json = await res.json();
       if (!json.success) {
         setError(json.error || 'Failed to check verification status.');

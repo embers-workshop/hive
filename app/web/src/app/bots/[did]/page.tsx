@@ -166,7 +166,7 @@ export default async function BotDetailPage({
           )}
 
           {/* Verification */}
-          <VerificationStatus did={bot.did} />
+          <VerificationStatus did={bot.did} apiUrl={process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'} />
 
           {/* Manifest */}
           <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
